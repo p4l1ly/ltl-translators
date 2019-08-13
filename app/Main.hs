@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import ParsePltl
 
 main :: IO ()
-main = someFunc
+main = interact $ show . parseLtl
