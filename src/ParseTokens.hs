@@ -14,9 +14,9 @@ tokens :: Parsec String () [String]
 tokens = concat <$> (spaces *> tokensNoSpaces `sepEndBy` spaces)
 
 tokensNoSpaces :: Parsec String () [String]
-tokensNoSpaces = many1 ((singleton <$> oneOf "()[]{}") <|> many1 alphaNum <|> many1 notAlphaNum)
+tokensNoSpaces = many1 ((singleton <$> oneOf "(){}") <|> many1 alphaNum <|> many1 notAlphaNum)
   where notAlphaNum = satisfy $ \x ->
-          not (isAlphaNum x) && not (isSpace x) && isPrint x
+          not (isAlphaNum x) && not (isSpace x) && isPrint x && not (x `elem` "(){}")
 
 tok :: [Char] -> WParser ()
 tok t = void $ tsatisfy (== t) -- <?> [qq|token {t}|]
