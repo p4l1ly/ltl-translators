@@ -1,6 +1,5 @@
 module Main where
 
-import Control.Monad
 import Data.List
 import System.Environment
 
@@ -37,13 +36,11 @@ generate terminalCnt = concat result
               _ -> []
             combSmaller = [[x, y] | x <- greatest, y <- smaller]
 
-            variations2 fn =
-              [fn x y | x <- greatest, y <- smaller] ++
-              [fn y x | x <- greatest, y <- smaller] ++
-              [fn x y | x <- greatest, y <- greatest]
+            -- variations2 fn =
+            --   [fn x y | x <- greatest, y <- smaller] ++
+            --   [fn y x | x <- greatest, y <- smaller] ++
+            --   [fn x y | x <- greatest, y <- greatest]
 
 main = do
-  [terminalCnt] <- getArgs
-  forM (generate$ read terminalCnt) $ \ltl -> do
-    print ltl
-    getLine
+  [terminalCnt, cnt] <- getArgs
+  mapM print$ take (read cnt)$ generate$ read terminalCnt

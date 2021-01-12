@@ -10,11 +10,14 @@ import qualified ParseDummy
 
 main :: IO ()
 main = do
-  [fmt] <- getArgs
+  (fmt : other) <- getArgs
   let parseLtl = case fmt of
         "pltl" -> ParsePltl.parseLtl
         "spot" -> ParseSpot.parseLtl
         "spin" -> ParseSpin.parseLtl
         "dummy" -> ParseDummy.parseLtl
 
-  interact $ show . flatten . svarsToVars . parseLtl
+      show' | "out=spin" `elem` other = showSpin
+            | otherwise = show
+
+  interact $ show' . flatten . svarsToVars . parseLtl

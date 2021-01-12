@@ -8,6 +8,7 @@ module Ltl
   ( Ltl(..)
   , svarsToVars
   , flatten
+  , showSpin
   ) where
 
 import Data.List
@@ -97,3 +98,17 @@ flatten = transform helper
       where kidnap = \case Or xs -> xs; x -> [x]
     helper (Not (Not x)) = Just $ flatten x
     helper x = Nothing
+
+showSpin (Var x) = [qq|a{x}|]
+showSpin (SVar x) = [qq|"{x}"|]
+showSpin LTrue = [qq|1|]
+showSpin LFalse = [qq|0|]
+showSpin (And xs) = [qq|({intercalate " && " $ map showSpin xs})|]
+showSpin (Or xs) = [qq|(| {intercalate " || " $ map showSpin xs})|]
+showSpin (Not x) = [qq|(! {showSpin x})|]
+showSpin (Next x) = [qq|(X {showSpin x})|]
+showSpin (Until x y) = [qq|({showSpin x} U {showSpin y})|]
+showSpin (WeakUntil x y) = [qq|({showSpin x} W {showSpin y})|]
+showSpin (Release x y) = [qq|({showSpin x} V {showSpin y})|]
+showSpin (Globally x) = [qq|([] {showSpin x})|]
+showSpin (Finally x) = [qq|(<> {showSpin x})|]

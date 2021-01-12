@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, RecordWildCards, NamedFieldPuns, TupleSections #-}
+{-# LANGUAGE ViewPatterns, RecordWildCards, NamedFieldPuns, TupleSections, ScopedTypeVariables #-}
 module Main where
 
 import Control.Arrow
@@ -11,23 +11,51 @@ import System.Random
 import Ltl (Ltl(..))
 
 weightsAll =
-  [ (mkAnd, 1.0)
-  , (mkNot, 1.0)
-  , (mkNext, 1.0)
+  [ (mkAnd, 1.2)
+  , (mkOr, 0.8)
+  , (mkNot, 1)
+  , (mkNext, 1)
   , (mkUntil, 1.0)
-  , (mkVar, 3.0)
+  , (mkVar, 6)
   ]
 
 weightsTerm =
-  [ (mkVar, 1.0)
+  [ (mkVar, 3.0)
   ]
 
 weightsNonTerm =
-  [ (mkAnd, 1.0)
+  [ (mkAnd, 2)
+  , (mkOr, 1)
   , (mkNot, 1.0)
-  , (mkNext, 1.0)
+  , (mkNext, 1)
   , (mkUntil, 1.0)
   ]
+
+-- -- m7:
+-- weightsAll =
+--   [ (mkAnd, 1.5)
+--   , (mkOr, 0.9)
+--   , (mkNot, 0.5)
+--   , (mkNext, 2.3)
+--   , (mkUntil, 1.0)
+--   , (mkVar, 3.0)
+--   , (mkTrue, 0.1)
+--   , (mkFalse, 0.1)
+--   ]
+-- 
+-- weightsTerm =
+--   [ (mkVar, 3.0)
+--   , (mkTrue, 0.1)
+--   , (mkFalse, 0.1)
+--   ]
+-- 
+-- weightsNonTerm =
+--   [ (mkAnd, 1.5)
+--   , (mkOr, 0.9)
+--   , (mkNot, 1.0)
+--   , (mkNext, 2.3)
+--   , (mkUntil, 1.0)
+--   ]
 
 normalize :: [(a, Double)] -> [(a, Double)]
 normalize xs = map (second (/total)) xs
@@ -51,22 +79,26 @@ data GenParams = GenParams
 
 randomRM range = state (randomR range)
 
+distroChoice :: [(b, Double)] -> StateT StdGen IO b
 distroChoice distro = do
-  roulette <- state (randomR (0, 1))
-  return$ fst$ fromJust$ find (\(x, p) -> p >= roulette) distro
+  roulette <- randomRM (0, 1)
+  return$ fst$ fromJust$ find (\(_, p) -> p >= roulette) distro
 
-generate :: GenParams -> State StdGen (Ltl, Int)
+generate :: GenParams -> StateT StdGen IO (Ltl, Int)
 generate params@GenParams{depth = 0} = distroChoice distroTerm >>= ($ params)
-generate params@GenParams{..} | forceDepth == True || depth < ceiling avgDepth =
+generate params@GenParams{..} | forceDepth || depth < ceiling avgDepth =
   distroChoice distroNonTerm >>= ($ params)
 generate params = distroChoice distroAll >>= ($ params)
 
-mkVar :: GenParams -> State StdGen (Ltl, Int)
+mkVar :: GenParams -> StateT StdGen IO (Ltl, Int)
 mkVar GenParams{terminalCount} = (, 0) . Var <$> randomRM (0, terminalCount - 1)
+mkTrue _ = return (LTrue, 0)
+mkFalse _ = return (LFalse, 0)
 mkNot = unary Not
 mkNext = unary Next
 mkUntil = binary Until
 mkAnd = binary (\x y -> And [x, y])
+mkOr = binary (\x y -> Or [x, y])
 
 unary op params = (op *** succ) <$> generate (deferParams params)
 binary op params@GenParams{..} = do
@@ -88,12 +120,48 @@ deferParams params@GenParams{..} = params
 main = do
   rangen <- newStdGen
 
-  [terminalCnt, depth, avgDepth, avgDepthDecay] <- getArgs
-  print$ fst$ flip evalState rangen$ generate GenParams
-    { forceDepth = True
-    , terminalCount = read terminalCnt
-    , depth = read depth
-    , avgDepth = read avgDepth
-    , avgDepthDecay = read avgDepthDecay
-    }
+  [ terminalCntStr
+    , depthStr
+    , avgDepthRatioStr
+    , avgDepthDecayStr
+    , terminalCntDStr
+    , depthDStr
+    , avgDepthRatioDStr
+    , avgDepthDecayDStr
+    , stepDStr
+    , countStr
+    , stopGrowStr
+    ] <- getArgs
 
+  let terminalCnt = read terminalCntStr :: Double
+  let depth = read depthStr :: Double
+  let avgDepthRatio = read avgDepthRatioStr :: Double
+  let avgDepthDecay = read avgDepthDecayStr :: Double
+
+  let terminalCntD = read terminalCntDStr :: Double
+  let depthD = read depthDStr :: Double
+  let avgDepthRatioD = read avgDepthRatioDStr :: Double
+  let avgDepthDecayD = read avgDepthDecayDStr :: Double
+  let stepD = read stepDStr :: Double
+
+  let stopGrow = read stopGrowStr :: Double
+  let count = read countStr :: Int
+
+  flip evalStateT rangen$
+    forM ([1..stopGrow] ++ replicate count stopGrow)$ \i -> do
+      let
+        step = stepD ** (i - 1)
+        logi = step * logBase 2 i
+        terminalCntI = terminalCnt + terminalCntD * logi
+        depthI = depth + depthD * logi
+        avgDepthRatioI = avgDepthRatio + avgDepthRatioD * logi
+        avgDepthDecayI = avgDepthDecay + avgDepthDecayD * logi
+
+      (ltl, _) <- generate GenParams
+        { forceDepth = True
+        , terminalCount = round terminalCntI
+        , depth = round depthI
+        , avgDepth = depthI * avgDepthRatioI
+        , avgDepthDecay = avgDepthDecayI
+        }
+      lift$ print ltl
