@@ -9,6 +9,8 @@ module Ltl
   , svarsToVars
   , flatten
   , showSpin
+  , (<=>)
+  , (-=>)
   ) where
 
 import Data.List
@@ -31,6 +33,9 @@ data Ltl
   | Globally Ltl
   | Finally Ltl
   | Release Ltl Ltl
+
+x <=> y = Or [And [x, y], And [Not x, Not y]]
+x -=> y = Or [Not x, y]
 
 childs :: Ltl -> [Ltl]
 childs (And xs) = xs
@@ -66,8 +71,8 @@ transform fn x = helper x
 svarsToVars :: Ltl -> Ltl
 svarsToVars ltl = transform helper ltl
   where
-    svars = S.toList $ S.fromList $ catMaybes $
-      map (\case SVar x -> Just x; _ -> Nothing) $ subnodes ltl
+    svars = S.toList $ S.fromList $
+      mapMaybe (\case SVar x -> Just x; _ -> Nothing) $ subnodes ltl
 
     svarToVar = M.fromList $ zip svars [0..]
 
@@ -92,9 +97,9 @@ instance Show Ltl where
 flatten :: Ltl -> Ltl
 flatten = transform helper
   where
-    helper (And xs) = Just $ And $ concatMap kidnap $ map flatten xs
+    helper (And xs) = Just $ And $ concatMap (kidnap . flatten) xs
       where kidnap = \case And xs -> xs; x -> [x]
-    helper (Or xs) = Just $ Or $ concatMap kidnap $ map flatten xs
+    helper (Or xs) = Just $ Or $ concatMap (kidnap . flatten) xs
       where kidnap = \case Or xs -> xs; x -> [x]
     helper (Not (Not x)) = Just $ flatten x
     helper x = Nothing

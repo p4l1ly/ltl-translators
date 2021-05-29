@@ -43,9 +43,9 @@ expr = buildExpressionParser table term
 
 linfix x = Infix x AssocLeft
 
-table = [ [ linfix $ (\x y -> Until x y) <$ tok "U"
-          , linfix $ (\x y -> WeakUntil x y) <$ tok "W"
-          , linfix $ (\x y -> Release x y) <$ tok "V"
+table = [ [ linfix $ Until <$ tok "U"
+          , linfix $ WeakUntil <$ tok "W"
+          , linfix $ Release <$ tok "V"
           ]
         , [ linfix $ (\x y -> And [x, y]) <$ (tok "&&" <|> tok "/\\") ]
         , [ linfix $ (\x y -> Or [x, y]) <$ (tok "||" <|> tok "\\/") ]
