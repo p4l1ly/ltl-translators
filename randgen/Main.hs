@@ -10,6 +10,7 @@ import System.Random
 
 import Ltl (Ltl(..))
 
+-- m12, m14
 -- weightsAll =
 --   [ (mkAnd, 1.2)
 --   , (mkOr, 0.8)
@@ -18,11 +19,11 @@ import Ltl (Ltl(..))
 --   , (mkUntil, 1.0)
 --   , (mkVar, 6.0)
 --   ]
--- 
+--
 -- weightsTerm =
 --   [ (mkVar, 3.0)
 --   ]
--- 
+--
 -- weightsNonTerm =
 --   [ (mkAnd, 1.2)
 --   , (mkOr, 0.8)
@@ -31,31 +32,52 @@ import Ltl (Ltl(..))
 --   , (mkUntil, 1.0)
 --   ]
 
--- m7:
+-- m15:
 weightsAll =
-  [ (mkAnd, 1.5)
+  [ (mkAnd, 3.5)
   , (mkOr, 0.9)
-  , (mkNot, 0.5)
+  , (mkNot, 1.0)
   , (mkNext, 2.3)
   , (mkUntil, 1.0)
   , (mkVar, 3.0)
-  , (mkTrue, 0.1)
-  , (mkFalse, 0.1)
   ]
 
 weightsTerm =
   [ (mkVar, 3.0)
-  , (mkTrue, 0.1)
-  , (mkFalse, 0.1)
   ]
 
 weightsNonTerm =
-  [ (mkAnd, 1.5)
+  [ (mkAnd, 3.5)
   , (mkOr, 0.9)
   , (mkNot, 1.0)
   , (mkNext, 2.3)
   , (mkUntil, 1.0)
   ]
+
+-- m7, m13:
+-- weightsAll =
+--   [ (mkAnd, 1.5)
+--   , (mkOr, 0.9)
+--   , (mkNot, 0.5)
+--   , (mkNext, 2.3)
+--   , (mkUntil, 1.0)
+--   , (mkVar, 3.0)
+--   , (mkTrue, 0.1)
+--   , (mkFalse, 0.1)
+--   ]
+--
+-- weightsTerm =
+--   [ (mkVar, 3.0)
+--   , (mkTrue, 0.1)
+--   , (mkFalse, 0.1)
+--   ]
+--
+-- weightsNonTerm =
+--   [ (mkAnd, 1.5)
+--   , (mkOr, 0.9)
+--   , (mkNot, 1.0)
+--   , (mkNext, 2.3)
+--   ]
 
 normalize :: [(a, Double)] -> [(a, Double)]
 normalize xs = map (second (/total)) xs

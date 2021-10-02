@@ -5,6 +5,7 @@ import Data.Bits
 import Data.List
 import System.Environment
 import Math.NumberTheory.Logarithms
+import System.IO
 
 import Safe (initMay)
 
@@ -55,7 +56,9 @@ generateLift binary n = And
     , And
         [ u -=> And (map (\x -> x <=> Next x) fs)
         , f0 -=> Next (Or [f0, f1])
-        , And$ zipWith3 (\a b c -> b -=> Next (Or [a, b, c])) fs (tail fs) (tail (tail fs))
+        , And$
+            zipWith3 (\a b c -> b -=> Next (Or [a, b, c]))
+              fs (tail fs) (tail (tail fs))
         , fl -=> Next (Or [fll, fl])
         ]
     , And
@@ -68,8 +71,8 @@ generateLift binary n = And
         , And$ zipWith (\fa fb -> And [Next fa, fb] -=> Not up) fs (tail fs)
         ]
     , sb <=> Or bs
-    , And$
-        map (\f -> And [f, Not sb] -=> Until f (Release sb (And [Finally f, Not up]))) fs
+    , And$ flip map fs$ \f ->
+        And [f, Not sb] -=> Until f (sb `Release` And [Finally f, Not up])
     , And$ zipWith (\b f -> b -=> Finally f) bs fs
     ]
   ]
@@ -90,10 +93,39 @@ generateLift binary n = And
   u = Var$ n+2
 
 
+generateCounter :: Int -> Ltl
+generateCounter n = And
+  [ m, And$ map (\i -> nexts i (Not b)) [0..n-1]
+  , Globally$ And
+    [ m -=> And (nexts n m : map (\i -> nexts i (Not m)) [1..n-1])
+    , And [m, Not b] -=> And [Not c, nexts n b]
+    , And [m, b] -=> And [c, nexts n (Not b)]
+    , And [Not c, Next (Not m)] -=> And
+        [ Next (Not c)
+        , Next b -=> nexts (n+1) b
+        , Next (Not b) -=> nexts (n+1) (Not b)
+        ]
+    , c -=> And
+        [ Next (Not b) -=> And [Next (Not c), nexts (n+1) b]
+        , Next b -=> And [Next c, nexts (n+1) (Not b)]
+        ]
+    ]
+  ]
+  where
+  m = Var 0
+  b = Var 1
+  c = Var 2
+  nexts count x = iterate Next x !! count
+
+
 main = do
   [terminalCnt, cnt] <- getArgs
-  mapM print$ take (read cnt)$
-    case terminalCnt of
-      "lift" -> map (generateLift False) [3..]
-      "liftBin" -> map (generateLift True) [3..]
-      x -> generate$ read terminalCnt
+  let ltls = take (read cnt)$
+        case terminalCnt of
+          "lift" -> map (generateLift False) [3..]
+          "liftBin" -> map (generateLift True) [3..]
+          "counter" -> map generateCounter [3..]
+          x -> generate$ read terminalCnt
+  flip mapM (zip [0..] ltls)$ \(i, ltl) -> do
+    hPrint stderr i
+    print ltl
