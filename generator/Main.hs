@@ -1,7 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Main where
 
-import Data.Bits
+import Data.Bits hiding (And)
 import Data.List
 import System.Environment
 import Math.NumberTheory.Logarithms

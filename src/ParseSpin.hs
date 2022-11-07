@@ -13,7 +13,6 @@ import Data.Either
 import Text.InterpolatedString.Perl6 (qq)
 import Text.Parsec
 import Text.Parsec.Expr
-import Util
 
 import Ltl
 import ParseTokens

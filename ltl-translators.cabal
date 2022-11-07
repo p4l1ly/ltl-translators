@@ -27,12 +27,12 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
       Ltl
       ParseDummy
       ParsePltl
       ParseSpin
       ParseSpot
+      ParseLtlf
       ParseTokens
   other-modules:
       Paths_ltl_translators

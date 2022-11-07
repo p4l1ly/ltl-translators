@@ -1,7 +1,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module ParseSpot (
+module ParseLtlf (
   parseLtl,
 ) where
 
@@ -29,9 +29,13 @@ term :: WParser Ltl
 term =
   parens expr
     <|> (Not <$> (tok "!" *> term))
+    <|> (Not <$> (tok "~" *> term))
     <|> (Next <$> (tok "X" *> term))
+    <|> (Next <$> (tok "next" *> term))
     <|> (Globally <$> (tok "G" *> term))
     <|> (Finally <$> (tok "F" *> term))
+    <|> (LTrue <$ tok "TRUE")
+    <|> (LFalse <$ tok "FALSE")
     <|> (LTrue <$ tok "1")
     <|> (LFalse <$ tok "0")
     <|> (SVar <$> tsatisfy (all isAlphaNum))
@@ -56,6 +60,8 @@ table =
     ]
   ,
     [ linfix $ (\x y -> Or [Not x, y]) <$ tok "->"
+    , linfix $ (\x y -> Or [Not x, y]) <$ tok "=>"
     , linfix $ (\x y -> Or [And [Not x, Not y], And [x, y]]) <$ tok "<->"
+    , linfix $ (\x y -> Or [And [Not x, Not y], And [x, y]]) <$ tok "<=>"
     ]
   ]
